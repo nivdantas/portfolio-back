@@ -1,10 +1,11 @@
-import { Elysia, t } from 'elysia'
+import {t, UnwrapSchema} from 'elysia'
 
-const authModel = new Elysia().model({
-    postSecretBody: t.Object({
-        secret_pass: t.String()
-    }),
+const AuthModel = {
+    secret_pass: t.String(),
     invalidPost: t.Literal('Invalid post secret')
-})
+} as const
 
-export type authModel = typeof authModel.models.postSecretBody
+
+export type AuthModel = {
+    [k in keyof typeof AuthModel]: UnwrapSchema<typeof AuthModel[k]>
+}
