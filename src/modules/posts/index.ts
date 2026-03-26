@@ -18,18 +18,22 @@ export const postRoutes = new Elysia({prefix: '/posts'})
         if (!post) {
             return status(404, "Post not found")
         }
+        return post
     })
 
-    // .guard({
-    //     beforeHandle({body, postService, status}){
-    //         try{
-    //             postService.verifySecret(body.secret_pass)
-    //         }
-    //         catch(err){
-    //             throw status(401, "Unauthorized") satisfies AuthModel.invalidPost
-    //         }
-    //     }
-    // })
+    .guard({
+        headers: t.Object({
+            authorization: t.String()
+        }),
+        beforeHandle({headers, postService, status}) {
+            const token = headers.authorization.replace(/^Bearer\s+/i, '')
+            try {
+                postService.verifySecret(token)
+            } catch {
+                return status(401, "Unauthorized")
+            }
+        }
+    })
 
     .post('/', async ({body}) => {
         return db.post.create({
@@ -42,7 +46,6 @@ export const postRoutes = new Elysia({prefix: '/posts'})
         });
     }, {
         body: t.Object({
-            secret_pass: t.String(),
             title: t.String(),
             slug: t.String(),
             content: t.String(),
