@@ -14,10 +14,12 @@ datasource db {
 }
 
 model Post {
-  id        String   @id @default(cuid())
-  slug      String   @unique
-  title     String
-  imageUrl  String?
-  content   String
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  title_en   String
+  title_pt   String
+  imageUrl   String?
+  content_en String
+  content_pt String
+  createdAt  DateTime @default(now())
 }

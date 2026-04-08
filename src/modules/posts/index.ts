@@ -1,7 +1,6 @@
 import {Elysia, t} from 'elysia'
 import {postService} from './service'
 import {db} from "../../db";
-import type {AuthModel} from "./model";
 
 export const postRoutes = new Elysia({prefix: '/posts'})
     .use(postService)
@@ -38,17 +37,21 @@ export const postRoutes = new Elysia({prefix: '/posts'})
     .post('/', async ({body}) => {
         return db.post.create({
             data: {
-                title: body.title,
+                title_en: body.title_en,
+                title_pt: body.title_pt,
                 slug: body.slug,
-                content: body.content,
+                content_en: body.content_en,
+                content_pt: body.content_pt,
                 imageUrl: body.imageUrl,
             }
         });
     }, {
         body: t.Object({
-            title: t.String(),
+            title_en: t.String(),
+            title_pt: t.String(),
             slug: t.String(),
-            content: t.String(),
+            content_en: t.String(),
+            content_pt: t.String(),
             imageUrl: t.Optional(t.String()),
         })
     })
