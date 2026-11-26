@@ -1,6 +1,7 @@
 import {Elysia, t} from 'elysia'
 import {postService} from './service'
 import {db} from "../../db";
+import {Prisma} from "../../generated/prisma/client";
 
 export const postRoutes = new Elysia({prefix: '/posts'})
     .use(postService)
@@ -21,14 +22,9 @@ export const postRoutes = new Elysia({prefix: '/posts'})
     })
 
     .guard({
-        headers: t.Object({
-            authorization: t.String()
-        }),
         beforeHandle({headers, postService, status}) {
-            const token = headers.authorization.replace(/^Bearer\s+/i, '')
-            try {
-                postService.verifySecret(token)
-            } catch {
+            const token = /^Bearer\s+(\S+)$/i.exec(headers.authorization ?? '')?.[1]
+            if (!postService.verifySecret(token)) {
                 return status(401, "Unauthorized")
             }
         }
@@ -62,14 +58,19 @@ export const postRoutes = new Elysia({prefix: '/posts'})
                 data: body
             })
         } catch (err) {
-            return status(404, "Post not found")
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+                return status(404, "Post not found")
+            }
+            throw err
         }
     }, {
         body: t.Object({
-            title: t.Optional(t.String()),
+            title_en: t.Optional(t.String()),
+            title_pt: t.Optional(t.String()),
             slug: t.String(),
-            content: t.Optional(t.String()),
-            imageUrl: t.Optional(t.String()),
+            content_en: t.Optional(t.String()),
+            content_pt: t.Optional(t.String()),
+            imageUrl: t.Optional(t.Nullable(t.String())),
         })
     })
     .delete('/:slug', async ({params: {slug}, status}) => {
@@ -79,10 +80,15 @@ export const postRoutes = new Elysia({prefix: '/posts'})
             })
             return status(200, "Post deleted")
         } catch (err) {
-            return status(404, "Post not found")
+            if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+                return status(404, "Post not found")
+            }
+            throw err
         }
     })
 
-postRoutes.listen(3000, ({hostname, port}) => {
-    console.log(`Post API is running at http://${hostname}:${port}`)
-})
+if (import.meta.main) {
+    postRoutes.listen(3000, ({hostname, port}) => {
+        console.log(`Post API is running at http://${hostname}:${port}`)
+    })
+}
