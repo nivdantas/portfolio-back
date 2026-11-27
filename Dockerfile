@@ -4,24 +4,24 @@ WORKDIR /app
 
 # 2. Dependency installation & Prisma generation
 FROM base AS builder
-COPY package.json bun.lockb* ./
+COPY package.json bun.lock ./
+COPY prisma.config.ts ./
 COPY prisma ./prisma/
 # Install dependencies
 RUN bun install --frozen-lockfile
 # Generate Prisma client
-RUN bunx prisma generate
+RUN bun --bun run prisma generate
 # Copy application code
-COPY . .
+COPY src ./src
 
 # 3. Production release stage
 FROM base AS release
 ENV NODE_ENV=production
 
-# Copy only necessary files from the builder stage
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/prisma ./prisma
+# Install runtime dependencies and copy the source and generated client
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile --production
 COPY --from=builder /app/src ./src
-COPY --from=builder /app/package.json ./
 
 # Expose standard port (Render will override via env var)
 EXPOSE 3000/tcp
